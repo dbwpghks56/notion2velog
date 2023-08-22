@@ -13,6 +13,7 @@ import pyautogui
 import os.path
 import time
 
+
 cookies = None
 options = webdriver.ChromeOptions()
 options.add_experimental_option('excludeSwitches', ['enable-logging'])
