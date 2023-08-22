@@ -21,7 +21,9 @@ options.add_experimental_option("useAutomationExtension", False)
 service = Service(executable_path=ChromeDriverManager().install())
 
 driver = webdriver.Chrome(service=service, options=options)
+
 def notion():
+    
     file = "notion.pkl"
     
     notionUrl = input("notion URL: ")
@@ -38,12 +40,11 @@ def notion():
     # https://www.notion.so/mirimdxlab/Sentry-73f05aa15fdb454a9290f4b5fc6e6f47?pvs=4
     driver.get(notionUrl)
     
-    driver.implicitly_wait(20)
+    driver.implicitly_wait(120)
 
     contents = driver.find_elements(By.CLASS_NAME, 'notion-page-content')
 
-    if not os.path.exists(file):
-        pickle.dump(driver.get_cookies(), open("notion.pkl", "wb"))
+    pickle.dump(driver.get_cookies(), open("notion.pkl", "wb"))
 
     for c in contents:
         for c2 in c.find_elements(By.CLASS_NAME, "notion-selectable"):
@@ -63,6 +64,24 @@ def velog():
     time.sleep(1)
     pyautogui.hotkey('ctrl', 'v')
 
-notion()
-velog()
+def menu():
+    answer = 0
 
+    print("choose : ")
+    print("1. notion2velog")
+    print("99. exit")
+
+    answer = input()
+    
+    return answer
+
+while(1):
+    answer = menu()
+    
+    if answer == "99":
+        break
+    else:
+        notion()
+        velog()
+
+exit()
