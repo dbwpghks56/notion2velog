@@ -29,4 +29,4 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run notion2velog.py
       run: |
-        python venv/notion2velog.py
+        python notion2velog.py
