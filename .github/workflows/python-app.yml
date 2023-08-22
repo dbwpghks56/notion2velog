@@ -34,6 +34,7 @@ jobs:
       run: echo "##[set-output name=version;]$(echo '${{ github.event.head_commit.message }}' | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')"
       id: extract_version_name 
     - name: Release create
+      id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
@@ -45,7 +46,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
       with:
-        upload_url: ${{ steps.Release_create.outputs.upload_url }}
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: dist/  # 실행 파일 경로
         asset_name: notion2velog.exe  # 업로드될 파일 이름
         asset_content_type: application/octet-stream
