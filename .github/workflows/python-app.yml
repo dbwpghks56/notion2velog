@@ -41,6 +41,19 @@ jobs:
       with: 
         tag_name: ${{ steps.extract_version_name.outputs.version }} 
         release_name: ${{ steps.extract_version_name.outputs.version }}
+    - name: Set Release Description
+      uses: actions/github-script@v5
+      with:
+        github-token: ${{ secrets.GITHUBTOKEN }}
+        script: |
+          const releaseId = "${{ steps.create_release.outputs.id }}";
+          const description = "해당 실행파일과 실행파일로 인해 생성되는 notion.pkl은 같은 폴더에 있어야합니다.(초기 로그인 뒤 자동로그인을 위한 사항입니다.)";
+          github.repos.updateRelease({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            release_id: releaseId,
+            body: description
+          });
     - name: Upload Executable as Release Asst
       uses: actions/upload-release-asset@v1
       env:
