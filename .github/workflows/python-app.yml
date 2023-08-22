@@ -47,6 +47,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUBTOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: dist/  # 실행 파일 경로
+        asset_path: /dist/  # 실행 파일 경로
         asset_name: notion2velog.exe  # 업로드될 파일 이름
         asset_content_type: application/octet-stream
