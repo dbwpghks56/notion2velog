@@ -47,8 +47,6 @@ def notion():
         
         contents = driver.find_elements(By.CLASS_NAME, 'notion-page-content')
 
-        pickle.dump(driver.get_cookies(), open("notion.pkl", "wb"))
-
         for c in contents:
             for c2 in c.find_elements(By.CLASS_NAME, "notion-selectable"):
                 c2.send_keys(Keys.CONTROL + 'a')
@@ -88,7 +86,10 @@ def notion():
         for btn in testSave:
             btn.click()
         time.sleep(0.5)
+        
         driver.close()
+        driver.quit()
+        
     elif entryNotionURL.get() == "" or "https://www.notion.so/" not in entryNotionURL.get():
         urlCautionContent.set("notion url 을 입력하세요.")
     # pyperclip.copy(content2)
