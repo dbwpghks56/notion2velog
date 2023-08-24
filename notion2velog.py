@@ -11,7 +11,11 @@ from selenium.webdriver.support import expected_conditions as EC
 import pickle
 import os.path
 import time
+import pyperclip
+import base64
+import PIL.Image
 from tkinter import *
+from tkinter import filedialog
 
 notionCookies = None
 velogCookies = None
@@ -20,6 +24,7 @@ options.add_experimental_option('excludeSwitches', ['enable-logging'])
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option("useAutomationExtension", False)
 service = Service(executable_path=ChromeDriverManager().install())
+file_paths = []
 
 def notion():
     if entryNotionURL.get() != "" and "https://www.notion.so/" in entryNotionURL.get():
@@ -43,7 +48,11 @@ def notion():
         
         driver.implicitly_wait(120)
         
-        title = driver.find_element(By.CSS_SELECTOR, '[placeholder="제목 없음"]').text
+        if velogTitleEntry.get() == "":
+            title = driver.find_element(By.CSS_SELECTOR, '[placeholder="제목 없음"]').text
+        
+        else:
+            title = velogTitleEntry.get()
         
         contents = driver.find_elements(By.CLASS_NAME, 'notion-page-content')
 
@@ -68,8 +77,6 @@ def notion():
         
         driver.implicitly_wait(120)
         
-        
-        
         velogTitle = driver.find_element(By.CSS_SELECTOR, '[placeholder="제목을 입력하세요"]')
         velogTitle.send_keys(title)
         
@@ -79,6 +86,18 @@ def notion():
             v.click()
             actions = ActionChains(driver)
             actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
+            # time.sleep(1)
+            # if file_paths:
+            #     for f in file_paths:
+            #         ff = PIL.Image.open(f)
+                
+            #         print(ff.format)
+            #         print(ff.size)
+            #         print(ff.mode)
+            #         actions.send_keys(ff)
+            #         actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
+            #         ff.close()
+            #         time.sleep(1)
             actions.perform()
         
         testSave = driver.find_elements(By.CLASS_NAME, "icODNG")
@@ -90,7 +109,10 @@ def notion():
         driver.close()
         driver.quit()
         
+        successCheck.set(" 임시저장 성공했습니다.")
+        
     elif entryNotionURL.get() == "" or "https://www.notion.so/" not in entryNotionURL.get():
+        successCheck.set("")
         urlCautionContent.set("notion url 을 입력하세요.")
     # pyperclip.copy(content2)
     
@@ -139,6 +161,14 @@ def notionLogin():
         # 작업 완료 후 드라이버 종료
         driver.quit()
 
+def imageUpload():
+    global file_paths
+    file_paths = filedialog.askopenfilenames(filetypes=[("image files", "*.jpg, *.png")])
+    if file_paths:
+        print("Selected files:")
+        for path in file_paths:
+            print(path)
+
 # GUI 작업
 root = Tk()
 root.title("Notion2Velog")
@@ -146,6 +176,7 @@ root.title("Notion2Velog")
 checkNotionLogin = StringVar(value= "False")
 checkVelogLogin = StringVar(value= "False")
 urlCautionContent = StringVar(value="")
+successCheck = StringVar(value="")
 
 if os.path.exists("notion.pkl"):
     checkNotionLogin.set("True")
@@ -164,14 +195,22 @@ loginCaution = Label(root, text="Velog 및 Notion 로그인이 진행되어 있�
                              , fg="red").grid(column=1, row=1)
 urlCaution = Label(root, textvariable=urlCautionContent
                              , fg="red").grid(column=1, row=2)
+successCheckLabel = Label(root, textvariable=successCheck
+                             , fg="blue").grid(column=1, row=3)
 
-labelNotionURL = Label(root, text="notion URL").grid(column=0,row=4)
+velogTitlelabel = Label(root, text="velog title").grid(column=0,row=4)
+labelNotionURL = Label(root, text="notion URL").grid(column=0,row=6)
+
+velogTitleEntry = Entry(root,width=50)
+velogTitleEntry.grid(column=1, row=4)
+imageUploadBtn = Button(root, text="이미지 업로드", command=imageUpload, width=15, height=3).grid(column=2, row=4)
+velogTitlecaution = Label(root, text="제목을 입력하지 않으면 노션의 제목이 들어갑니다.", fg="green").grid(column=1,row=5)
 
 entryNotionURL = Entry(root, width=70)
-entryNotionURL.grid(column=1, row=4)
+entryNotionURL.grid(column=1, row=6)
 
-btnNotionToVelog = Button(root, text="Notion2Velog", command=notion, width=10, height=3).grid(column=0, row=5)
-btnVelogGitLogin = Button(root, text="Velog Git Login", command=velogGitHubLogin, width=15, height=3).grid(column=1, row=5)
-btnNotionLogin = Button(root, text="Notion Login", command=notionLogin, width=15, height=3).grid(column=2, row=5)
+btnNotionToVelog = Button(root, text="Notion2Velog", command=notion, width=10, height=3).grid(column=0, row=7)
+btnVelogGitLogin = Button(root, text="Velog Git Login", command=velogGitHubLogin, width=15, height=3).grid(column=1, row=7)
+btnNotionLogin = Button(root, text="Notion Login", command=notionLogin, width=15, height=3).grid(column=2, row=7)
 
 root.mainloop()
