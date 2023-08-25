@@ -46,7 +46,7 @@ jobs:
           Release 탭에 에 있는 .exe 파일은 이유는 모르겠지만 실행이 불가능합니다.<br>
           .zip 파일은 받은 뒤 dist 폴더에 있는 .exe 파일을 실행해주세요.<br>
           
-          이미지 업로드 칸이 있지만, 개발 중 ⏰<br><br>
+          이미지 업로드 칸이 있지만, 개발 중 입니다. ⏰<br><br>
     - name: Upload Executable as Release Asst
       uses: actions/upload-release-asset@v1
       env:
