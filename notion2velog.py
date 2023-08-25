@@ -80,6 +80,10 @@ def notion():
         velogTitle = driver.find_element(By.CSS_SELECTOR, '[placeholder="제목을 입력하세요"]')
         velogTitle.send_keys(title)
         
+        velogTag = driver.find_element(By.CSS_SELECTOR, '[placeholder="태그를 입력하세요"]')
+        velogTag.send_keys("Notion2Velog")
+        velogTag.send_keys(Keys.ENTER)
+        
         velogContent = driver.find_elements(By.CLASS_NAME, "CodeMirror")
 
         for v in velogContent:
