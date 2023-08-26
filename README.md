@@ -45,9 +45,10 @@ selenium의 웹 스크랩핑 능력이 매우 강력하다는 것을 알게된 �
 
 ## 🚧 한계점
 
-- selenium을 이용해 복사한 데이터를 붙여넣기하는 간단한 기능이기 때문에 이미지까지 가능하지는 않아 보입니다.
+- ~~selenium을 이용해 복사한 데이터를 붙여넣기하는 간단한 기능이기 때문에 이미지까지 가능하지는 않아 보입니다.
 
-물론 이미지 url 을 제대로 가져오지만 notion의 보안 정책인지 notion의 s3 에 제대로 접근을 못하여 이미지가 안 나온다고 생각됩니다.
+물론 이미지 url 을 제대로 가져오지만 notion의 보안 정책인지 notion의 s3 에 제대로 접근을 못하여 이미지가 안 나온다고 생각됩니다.~~
+- 이미지를 가져오지만 정확한 위치에 삽입은 어렵습니다. 물론 고치려 노력은 해보겠습니다.
 - Velog의 경우에는 git 만 notion 의 경우에는 직접 이메일을 입력한 경우에만 로그인이 가능합니다. selenium의 한계점으로 보입니다만 자료를 더 찾아보아야겠습니다.
 
 ## 👩🏻‍💻 Code
@@ -60,9 +61,12 @@ options.add_experimental_option('excludeSwitches', ['enable-logging'])
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option("useAutomationExtension", False)
 service = Service(executable_path=ChromeDriverManager().install())
+file_paths = []
+notionMainLink = "https://www.notion.so/"
 
 def notion():
-    if entryNotionURL.get() != "" and "https://www.notion.so/" in entryNotionURL.get():
+    global file_paths
+    if entryNotionURL.get() != "" and notionMainLink in entryNotionURL.get():
         urlCautionContent.set("")
         driver = webdriver.Chrome(service=service, options=options)
         
@@ -71,18 +75,23 @@ def notion():
         
         if os.path.exists(file):
             notionCookies = pickle.load(open(file, "rb"))
-            driver.get("https://www.notion.so")
+            driver.get(notionMainLink)
             driver.delete_all_cookies()
             
             for cookie in notionCookies:
                 # cookie.pop("domain")
                 driver.add_cookie(cookie)
-       
+        # https://www.notion.so/ryudomain/c4828705de9e41e2b35bae5691cb7a81?pvs=4 
+        # https://www.notion.so/mirimdxlab/Sentry-73f05aa15fdb454a9290f4b5fc6e6f47?pvs=4
         driver.get(entryNotionURL.get())
         
         driver.implicitly_wait(120)
         
-        title = driver.find_element(By.CSS_SELECTOR, '[placeholder="제목 없음"]').text
+        if velogTitleEntry.get() == "":
+            title = driver.find_element(By.CSS_SELECTOR, '[placeholder="제목 없음"]').text
+        
+        else:
+            title = velogTitleEntry.get()
         
         contents = driver.find_elements(By.CLASS_NAME, 'notion-page-content')
 
@@ -90,11 +99,16 @@ def notion():
             for c2 in c.find_elements(By.CLASS_NAME, "notion-selectable"):
                 c2.send_keys(Keys.CONTROL + 'a')
                 c2.send_keys(Keys.CONTROL + 'c')
+                
+        for c in contents:
+            for c2 in c.find_elements(By.TAG_NAME, "img"):
+                if "notion.so" in c2.get_attribute("src"):
+                    file_paths.append(c2.get_attribute("src"))
         
         driver.close()
         
         driver = webdriver.Chrome(service=service, options=options)
-        
+
         if os.path.exists(fileVelog):
             velogCookies = pickle.load(open(fileVelog, "rb"))
             driver.get("https://velog.io")
@@ -107,10 +121,12 @@ def notion():
         
         driver.implicitly_wait(120)
         
-        
-        
         velogTitle = driver.find_element(By.CSS_SELECTOR, '[placeholder="제목을 입력하세요"]')
         velogTitle.send_keys(title)
+        
+        velogTag = driver.find_element(By.CSS_SELECTOR, '[placeholder="태그를 입력하세요"]')
+        velogTag.send_keys("Notion2Velog")
+        velogTag.send_keys(Keys.ENTER)
         
         velogContent = driver.find_elements(By.CLASS_NAME, "CodeMirror")
 
@@ -118,18 +134,52 @@ def notion():
             v.click()
             actions = ActionChains(driver)
             actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
+            actions.key_down(Keys.ENTER).key_up(Keys.ENTER)
             actions.perform()
+            
+        for f in file_paths:
+            driver2 = webdriver.Chrome(service=service, options=options)
+            if os.path.exists(file):
+                notionCookies = pickle.load(open(file, "rb"))
+                driver2.get(notionMainLink)
+                driver2.delete_all_cookies()
+                
+                for cookie in notionCookies:
+                    # cookie.pop("domain")
+                    driver2.add_cookie(cookie)
+            
+            driver2.get(f)
+            c = driver2.find_element(By.TAG_NAME, "body")
+            c.send_keys(Keys.CONTROL + 'c')
+            actions.click()
+            actions.perform()
+            actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
+            actions.perform()
+            
+            driver2.close()
+            
+        
+        velogContent2 = driver.find_element(By.CLASS_NAME, "CodeMirror")
+        wait = WebDriverWait(driver, 10)  # 최대 10초 동안 기다림 (필요에 따라 조절)
+        def check_url(driver):
+            return "업로드중.." not in velogContent2.text
+        # 조건 함수를 사용하여 기다리기
+        wait.until(check_url)
         
         testSave = driver.find_elements(By.CLASS_NAME, "icODNG")
-        
         for btn in testSave:
             btn.click()
+            
         time.sleep(0.5)
         
         driver.close()
         driver.quit()
+        driver2.quit()
+        file_paths = []
+        successCheck.set(" 임시저장 성공했습니다.")
         
     elif entryNotionURL.get() == "" or "https://www.notion.so/" not in entryNotionURL.get():
+        successCheck.set("")
         urlCautionContent.set("notion url 을 입력하세요.")
     # pyperclip.copy(content2)
     
@@ -184,6 +234,7 @@ def notionLogin():
 - 명확한 한계점이 있으니 개선해 나갈 생각입니다. 이미지는 물론 로그인 기능의 한계점까지 개선해볼 생각입니다.
 - 지금 생각하는 추가 기능은
     - ~~제목 입력받아 velog 임시저장 때 사용하기 ( 빈 문자열의 경우 notion의 데이터 사용)~~
+    - 브라우저 실제로 띄우지 않고 실행할 수 있는 법 알아보고( chrome add argument 실패 )
     - 속도 개선
     - 깃 readme 에도 옮기기..?
     - etc…

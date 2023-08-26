@@ -11,9 +11,6 @@ from selenium.webdriver.support import expected_conditions as EC
 import pickle
 import os.path
 import time
-import pyperclip
-import base64
-import PIL.Image
 from tkinter import *
 from tkinter import filedialog
 
@@ -25,9 +22,11 @@ options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option("useAutomationExtension", False)
 service = Service(executable_path=ChromeDriverManager().install())
 file_paths = []
+notionMainLink = "https://www.notion.so/"
 
 def notion():
-    if entryNotionURL.get() != "" and "https://www.notion.so/" in entryNotionURL.get():
+    global file_paths
+    if entryNotionURL.get() != "" and notionMainLink in entryNotionURL.get():
         urlCautionContent.set("")
         driver = webdriver.Chrome(service=service, options=options)
         
@@ -36,7 +35,7 @@ def notion():
         
         if os.path.exists(file):
             notionCookies = pickle.load(open(file, "rb"))
-            driver.get("https://www.notion.so")
+            driver.get(notionMainLink)
             driver.delete_all_cookies()
             
             for cookie in notionCookies:
@@ -60,11 +59,16 @@ def notion():
             for c2 in c.find_elements(By.CLASS_NAME, "notion-selectable"):
                 c2.send_keys(Keys.CONTROL + 'a')
                 c2.send_keys(Keys.CONTROL + 'c')
+                
+        for c in contents:
+            for c2 in c.find_elements(By.TAG_NAME, "img"):
+                if "notion.so" in c2.get_attribute("src"):
+                    file_paths.append(c2.get_attribute("src"))
         
         driver.close()
         
         driver = webdriver.Chrome(service=service, options=options)
-        
+
         if os.path.exists(fileVelog):
             velogCookies = pickle.load(open(fileVelog, "rb"))
             driver.get("https://velog.io")
@@ -90,29 +94,48 @@ def notion():
             v.click()
             actions = ActionChains(driver)
             actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
-            # time.sleep(1)
-            # if file_paths:
-            #     for f in file_paths:
-            #         ff = PIL.Image.open(f)
-                
-            #         print(ff.format)
-            #         print(ff.size)
-            #         print(ff.mode)
-            #         actions.send_keys(ff)
-            #         actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
-            #         ff.close()
-            #         time.sleep(1)
+            actions.key_down(Keys.ENTER).key_up(Keys.ENTER)
             actions.perform()
+            
+        for f in file_paths:
+            driver2 = webdriver.Chrome(service=service, options=options)
+            if os.path.exists(file):
+                notionCookies = pickle.load(open(file, "rb"))
+                driver2.get(notionMainLink)
+                driver2.delete_all_cookies()
+                
+                for cookie in notionCookies:
+                    # cookie.pop("domain")
+                    driver2.add_cookie(cookie)
+            
+            driver2.get(f)
+            c = driver2.find_element(By.TAG_NAME, "body")
+            c.send_keys(Keys.CONTROL + 'c')
+            actions.click()
+            actions.perform()
+            actions.key_down(Keys.CONTROL).send_keys('v').key_up(Keys.CONTROL)
+            actions.perform()
+            
+            driver2.close()
+            
+        
+        velogContent2 = driver.find_element(By.CLASS_NAME, "CodeMirror")
+        wait = WebDriverWait(driver, 10)  # 최대 10초 동안 기다림 (필요에 따라 조절)
+        def check_url(driver):
+            return "업로드중.." not in velogContent2.text
+        # 조건 함수를 사용하여 기다리기
+        wait.until(check_url)
         
         testSave = driver.find_elements(By.CLASS_NAME, "icODNG")
-        
         for btn in testSave:
             btn.click()
+            
         time.sleep(0.5)
         
         driver.close()
         driver.quit()
-        
+        driver2.quit()
+        file_paths = []
         successCheck.set(" 임시저장 성공했습니다.")
         
     elif entryNotionURL.get() == "" or "https://www.notion.so/" not in entryNotionURL.get():
@@ -165,14 +188,6 @@ def notionLogin():
         # 작업 완료 후 드라이버 종료
         driver.quit()
 
-def imageUpload():
-    global file_paths
-    file_paths = filedialog.askopenfilenames(filetypes=[("image files", "*.jpg, *.png")])
-    if file_paths:
-        print("Selected files:")
-        for path in file_paths:
-            print(path)
-
 # GUI 작업
 root = Tk()
 root.title("Notion2Velog")
@@ -207,7 +222,6 @@ labelNotionURL = Label(root, text="notion URL").grid(column=0,row=6)
 
 velogTitleEntry = Entry(root,width=50)
 velogTitleEntry.grid(column=1, row=4)
-imageUploadBtn = Button(root, text="이미지 업로드", command=imageUpload, width=15, height=3).grid(column=2, row=4)
 velogTitlecaution = Label(root, text="제목을 입력하지 않으면 노션의 제목이 들어갑니다.", fg="green").grid(column=1,row=5)
 
 entryNotionURL = Entry(root, width=70)
